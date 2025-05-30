@@ -1,2 +1,5 @@
 kubectl
 minikube-darwin-arm64
+
+data
+*.pyc
