@@ -1,0 +1,96 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datamart-job
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: spark
+          image: datamart:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/opt/bitnami/spark/bin/spark-submit"
+          args:
+            - "--class"
+            - "$(CLASS_NAME)"
+            - "--master"
+            - "k8s://https://kubernetes.default.svc:443" 
+            - "--deploy-mode"
+            - "cluster"
+            - "--conf"
+            - "spark.kubernetes.container.image=$(SPARK_IMAGE)"
+            - "--conf"
+            - "spark.executor.instances=$(EXECUTOR_INSTANCES)"
+            - "--conf"
+            - "spark.kubernetes.namespace=default"
+            - "--conf"
+            - "spark.jars.ivy=/home/spark/.ivy2"
+            - "$(JAR_PATH)"
+            - "--inputPath"
+            - "$(INPUT_PATH)"
+            - "--outputPath"
+            - "$(OUTPUT_PATH)"
+            - "--dbUrl"
+            - "$(DB_URL)"
+            - "--dbUser"
+            - "$(POSTGRES_USER)"
+            - "--dbPassword"
+            - "$(POSTGRES_PASSWORD)"
+          env:
+            - name: HADOOP_SECURITY_AUTHENTICATION
+              value: simple
+              
+            - name: CLASS_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: CLASS_NAME
+            - name: JAR_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: JAR_PATH
+            - name: SPARK_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: SPARK_IMAGE
+            - name: EXECUTOR_INSTANCES
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: EXECUTOR_INSTANCES
+            - name: INPUT_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: INPUT_PATH
+            - name: OUTPUT_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: OUTPUT_PATH
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_URL
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pg-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: pg-secrets
+                  key: POSTGRES_DB
+            - name: IVY_HOME
+              value: "/home/spark/.ivy2"

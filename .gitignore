@@ -1,2 +1,11 @@
 kubectl
 minikube-darwin-arm64
+
+data
+*.pyc
+
+*.env
+
+data_mart/project
+
+data_mart/target
