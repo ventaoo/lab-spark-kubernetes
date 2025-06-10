@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-scripts
+  labels:
+    {{- include "datamart.labels" . | nindent 4 }}
+data:
+  run-datamart.sh: |
+    #!/bin/bash
+    {{ include "datamart.sparkSubmit" . | indent 4 }}

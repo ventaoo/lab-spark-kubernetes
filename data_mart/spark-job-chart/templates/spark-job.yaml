@@ -1,0 +1,107 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-datamart-process
+  labels:
+    {{- include "datamart.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Values.spark.serviceAccount }}
+      containers:
+      - name: spark-submit
+        securityContext:
+          runAsUser: 1001 # 以 root 用户身份运行
+        image: {{ .Values.spark.image }}
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "当前用户: $(whoami)"
+            echo "用户ID: $(id -u)"
+            echo "组ID: $(id -g)"
+
+            # 安装Hadoop客户端
+            echo "===== 安装Hadoop客户端 =====";
+            apt-get update && apt-get install -y --no-install-recommends hadoop-client
+            
+            # 设置环境变量
+            export IVY_HOME=/tmp/.ivy2
+            export SPARK_LOCAL_DIRS=/tmp/spark-local
+            mkdir -p $IVY_HOME $SPARK_LOCAL_DIRS
+            
+            # 创建Hadoop配置目录
+            mkdir -p /tmp/hadoop-conf
+            
+            # 禁用Hadoop安全特性
+            echo "<?xml version=\"1.0\"?>" > /tmp/hadoop-conf/core-site.xml
+            echo "<configuration>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  <property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <name>hadoop.security.authentication</name>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <value>simple</value>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  </property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  <property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <name>hadoop.security.authorization</name>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <value>false</value>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  </property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  <property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <name>fs.defaultFS</name>" >> /tmp/hadoop-conf/core-site.xml
+            echo "    <value>hdfs://{{ .Values.hdfs.namenode }}:{{ .Values.hdfs.port }}</value>" >> /tmp/hadoop-conf/core-site.xml
+            echo "  </property>" >> /tmp/hadoop-conf/core-site.xml
+            echo "</configuration>" >> /tmp/hadoop-conf/core-site.xml
+            
+            # 验证HDFS连接
+            echo "===== 验证HDFS连接 =====";
+            hdfs --config /tmp/hadoop-conf dfs -ls {{ .Values.spark.appJarPath }} || true
+            hdfs --config /tmp/hadoop-conf dfs -ls {{ .Values.spark.pgJarPath }} || true
+            
+            echo "===== 开始执行Spark作业 =====";
+            echo "核心配置:";
+            cat /tmp/hadoop-conf/core-site.xml;
+            
+            {{ include "datamart.sparkSubmit" . | indent 12 | trim }};
+            
+            EXIT_CODE=$?
+            echo "===== 作业执行完成，退出码: $EXIT_CODE =====";
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "作业执行失败，保留容器运行600秒供调试...";
+              sleep 600
+            fi
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.db.passwordSecret }}
+              key: {{ .Values.db.passwordKey }}
+        - name: IVY_HOME
+          value: "/tmp/.ivy2"
+        - name: SPARK_LOCAL_DIRS
+          value: "/tmp/spark-local"
+        - name: HADOOP_USER_NAME
+          value: "spark"
+        - name: HADOOP_CONF_DIR
+          value: "/tmp/hadoop-conf"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: scripts
+          mountPath: "/scripts"
+        - name: temp-dir
+          mountPath: "/tmp"
+      volumes:
+      - name: scripts
+        configMap:
+          name: {{ .Release.Name }}-scripts
+      - name: temp-dir
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 2
+
+
+
+#  @TODO  修改config文件，挂载
+
+
+  

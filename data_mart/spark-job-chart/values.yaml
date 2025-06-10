@@ -1,0 +1,35 @@
+# Spark作业配置
+spark:
+  image: "datamart:latest"
+  serviceAccount: spark
+  namespace: default
+  
+  # JAR文件配置（使用实际服务名）
+  appJarPath: "hdfs://hdfs-cluster-namenode:9000/spark-uploads/datamart-assembly-0.1.jar"
+  pgJarPath: "hdfs://hdfs-cluster-namenode:9000/spark-uploads/postgresql-42.6.0.jar"
+  className: "com.example.datamart.DataMartApp"
+  
+  # 数据路径（使用实际服务名）
+  inputPath: "hdfs://hdfs-cluster-namenode:9000/data/input/en.openfoodfacts.org.products.csv.gz"
+  sparkMaster: "k8s://https://kubernetes.default.svc"
+  
+  # 资源分配
+  executorInstances: 1
+  driverMemory: "1g"
+  executorMemory: "1g"
+
+# 数据库配置（使用实际服务名）
+db:
+  host: "postgresql-postgres"  # 更新为实际服务名
+  port: 5432
+  name: "datamartdb"
+  user: "postgres"
+  password: "mysecretpassword"
+  passwordSecret: "datamart-db-secret"
+  passwordKey: "password"
+  url: "jdbc:postgresql://postgresql-postgres:5432/datamartdb"
+
+# HDFS配置（使用实际服务名）
+hdfs:
+  namenode: "hdfs-cluster-namenode"  # 更新为实际服务名
+  port: 9000

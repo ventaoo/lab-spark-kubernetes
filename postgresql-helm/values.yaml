@@ -1,0 +1,25 @@
+# PostgreSQL 配置
+postgresql:
+  image: "postgres:14"
+  port: 5432
+  storageSize: "1Gi"
+  storageClass: "standard"
+  
+  # 数据库初始化配置
+  initScript: |
+    CREATE TABLE IF NOT EXISTS processed_data (
+      fat_100g FLOAT,
+      carbohydrates_100g FLOAT,
+      proteins_100g FLOAT,
+      features TEXT,
+      scaled_features TEXT
+    );
+
+  # 数据库认证配置 (实际值将通过secret设置)
+  database: "datamartdb"
+  username: "postgres"
+
+# Secret 配置
+secrets:
+  name: "pg-secrets"
+  passwordKey: "password"

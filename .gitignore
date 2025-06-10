@@ -6,6 +6,10 @@ data
 
 *.env
 
-data_mart/project
+data_mart/jar/project/project
+data_mart/jar/project/target
+data_mart/jar/target
 
-data_mart/target
+.DS_Store
+
+hdfs-helm/files

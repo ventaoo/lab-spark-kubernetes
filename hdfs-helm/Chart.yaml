@@ -1,0 +1,5 @@
+apiVersion: v2
+name: hdfs
+description: Hadoop HDFS Helm Chart for Kubernetes
+version: 1.0.0
+appVersion: 3.2.1

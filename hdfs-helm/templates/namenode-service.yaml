@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-namenode
+spec:
+  selector:
+    {{- include "namenode.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.namenode.webPort }}
+      targetPort: {{ .Values.namenode.webPort }}
+    - name: hdfs
+      port: {{ .Values.namenode.servicePort }}
+      targetPort: {{ .Values.namenode.servicePort }}

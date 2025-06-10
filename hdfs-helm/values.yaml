@@ -1,0 +1,33 @@
+# Global settings
+global:
+  storageClass: "standard"
+  clusterName: "itmo_cluster"
+  hdfsReplication: 1
+
+# Namenode配置
+namenode:
+  image: "bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8"
+  replicaCount: 1
+  webPort: 9870
+  servicePort: 9000
+  storageSize: 5Gi
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1"
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+
+# Datanode配置
+datanode:
+  image: "bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8"
+  replicaCount: 1
+  storageSize: 5Gi
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "0.5"
+    limits:
+      memory: "2Gi"
+      cpu: "1"

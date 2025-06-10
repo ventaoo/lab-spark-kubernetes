@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-datanode
+  labels:
+    {{- include "hdfs.labels" . | nindent 4 }}
+    {{- include "datanode.selectorLabels" . | nindent 4 }}
+spec:
+  serviceName: {{ .Release.Name }}-hadoop-cluster
+  replicas: {{ .Values.datanode.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "datanode.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "datanode.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: datanode
+          image: {{ .Values.datanode.image }}
+          env:
+            - name: CORE_CONF_fs_defaultFS
+              value: "hdfs://{{ .Release.Name }}-namenode:{{ .Values.namenode.servicePort }}"
+          volumeMounts:
+            - name: hdfs-storage
+              mountPath: /hadoop/dfs/data
+          resources:
+            {{- toYaml .Values.datanode.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: hdfs-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.global.storageClass | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.datanode.storageSize }}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-namenode
+  labels:
+    {{- include "hdfs.labels" . | nindent 4 }}
+    {{- include "namenode.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.namenode.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "namenode.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "namenode.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: namenode
+          image: {{ .Values.namenode.image }}
+          ports:
+            - containerPort: {{ .Values.namenode.webPort }}
+            - containerPort: {{ .Values.namenode.servicePort }}
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.global.clusterName | quote }}
+            - name: CORE_CONF_fs_defaultFS
+              value: "hdfs://{{ .Release.Name }}-namenode:{{ .Values.namenode.servicePort }}"
+            - name: HDFS_CONF_dfs_replication
+              value: {{ .Values.global.hdfsReplication | quote }}
+          volumeMounts:
+            - name: hdfs-storage
+              mountPath: /hadoop/dfs/name
+          resources:
+            {{- toYaml .Values.namenode.resources | nindent 12 }}
+      volumes:
+        - name: hdfs-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-namenode-pvc
