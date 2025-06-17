@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-training-job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: init-spark-events
+          image: busybox
+          command: ["sh", "-c", "mkdir -p /data/spark-events"]
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+      containers:
+        - name: model-trainer
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: model-training-config
+            - secretRef:
+                name: datamart-db-secret
+          env:
+            - name: SPARK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: model-training-config
+                  key: spark-config.json
+            - name: K_CLUSTERS
+              value: "{{ .Values.env.K_CLUSTERS }}"
+            - name: SPARK_EVENTS_DIR
+              value: "{{ .Values.env.SPARK_EVENTS_DIR }}"
+            - name: MODEL_SAVE_PATH
+              value: "{{ .Values.env.MODEL_SAVE_PATH }}"
+            - name: LOG_PATH
+              value: "{{ .Values.env.LOG_PATH }}"
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: training-data-pvc
+  backoffLimit: 3

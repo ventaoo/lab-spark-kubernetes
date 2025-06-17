@@ -1,0 +1,26 @@
+image:
+  repository: model-training
+  tag: latest
+  pullPolicy: IfNotPresent
+
+sparkConfig: |
+  {
+    "driver_memory": "6g",
+    "executor_memory": "8g",
+    "executor_cores": 2,
+    "shuffle_partitions": 8
+  }
+
+db:
+  host: postgresql-postgres
+  port: 5432
+  name: datamartdb
+  user: postgres
+  password: mysecretpassword
+  passwordSecret: datamart-db-secret
+
+env:
+  K_CLUSTERS: 3
+  SPARK_EVENTS_DIR: /data/spark-events
+  MODEL_SAVE_PATH: /data/model
+  LOG_PATH: /data/app.log

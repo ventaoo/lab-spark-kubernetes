@@ -50,7 +50,7 @@ minikube addons enable registry     # 本地镜像仓库
 minikube addons enable storage-provisioner  # 动态存储分配
 
 # Step2. Start minikube (driver - docker)
-minikube start --driver=docker
+minikube start --driver=docker 
 minikube status # show the status of server minikube
 
 # Step3. Install kubectl
@@ -123,4 +123,50 @@ helm install datamart ./spark-job-chart \
   --set hdfs.namenode="hdfs-cluster-namenode" \
   --set db.host="postgresql-postgres" \
   --set db.password=postgres
+```
+
+##### Database -> model training
+
+``` bash
+docker build -t model-training:latest .
+
+# 安装Chart（假设已存在datamart-db-secret）
+helm install model-training ./model-training-chart \ 
+  --set db.password=postgres
+```
+
+
+``` bash
+kubectl get pods
+model-training-job-kvd4c                    0/1     Completed   0               4h22m
+
+
+kubectl describe pv pvc-a6186cf4-b0b1-4605-9f99-e6367092bf75
+
+Name:            pvc-a6186cf4-b0b1-4605-9f99-e6367092bf75
+Labels:          <none>
+Annotations:     hostPathProvisionerIdentity: 0b082bb0-2b8b-45ba-a1ef-dd1715e75693
+                 pv.kubernetes.io/provisioned-by: k8s.io/minikube-hostpath
+Finalizers:      [kubernetes.io/pv-protection]
+StorageClass:    standard
+Status:          Bound
+Claim:           default/training-data-pvc
+Reclaim Policy:  Delete
+Access Modes:    RWO
+VolumeMode:      Filesystem
+Capacity:        1Gi
+Node Affinity:   <none>
+Message:         
+Source:
+    Type:          HostPath (bare host directory volume)
+    Path:          /tmp/hostpath-provisioner/default/training-data-pvc
+    HostPathType:  
+Events:            <none>
+
+minikube ssh
+
+docker@minikube:~$ cd /tmp/hostpath-provisioner/default/training-data-pvc
+
+ls
+app.log  model  spark-events
 ```

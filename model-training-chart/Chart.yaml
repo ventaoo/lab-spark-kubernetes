@@ -1,0 +1,4 @@
+apiVersion: v2
+name: model-training-job
+version: 0.1.0
+description: A Helm chart to run a model training job using Spark and PostgreSQL

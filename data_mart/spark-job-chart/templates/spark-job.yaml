@@ -98,10 +98,3 @@ spec:
         emptyDir: {}
       restartPolicy: Never
   backoffLimit: 2
-
-
-
-#  @TODO  修改config文件，挂载
-
-
-  
